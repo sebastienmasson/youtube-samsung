@@ -91,8 +91,10 @@ while [ "$1" != "" ]; do
 		-d|--dir|--directory)	# Target directory
 			targetdir="$2"
 			if [ "$targetdir" = "" ]; then
-				echo "Warning: Option -d, --dir, --directory used without argument" ; echo
+				echo "Error: Missing argument with option -d, --dir, --directory" ; echo
+				exit 1
 			fi
+			shift 2
 			;;
 		*)
 			usage
@@ -131,11 +133,17 @@ fi
 # START DOWNLOAD
 #
 echo "STARTING DOWNLOAD ..."
+
 # Make temporary directory
 if [ "$targetdir" != "" ]; then
 	mkdir "$targetdir"
+	echo "... target directory has been built"
+else
+	#targetdir="$PWD"
+	targetdir="."
+
+	echo "... using current directory"
 fi
-echo "... target directory has been built"
 
 echo " ... downloading.  Please wait!"
 # Download video from URL
@@ -172,9 +180,13 @@ IFS=$'\n'
 
 for file in "$targetdir"/*
 do
-	targetfile="${file}.avi"
-	echo "... processing \"$file\" to \"$targetfile\".  Please wait!"
-	ffmpeg -i "$file" -acodec aac -vcodec libx264 "$targetfile"
+	filetype="$(file --mime-type -b "$file" | cut -d\/ -f1)"
+	echo "$file is type: $filetype" ; echo
+       	if [ "$filetype" = "video" ]; then
+		targetfile="${file}.avi"
+		echo "... processing \"$file\" to \"$targetfile\".  Please wait!"
+		ffmpeg -i "$file" -acodec aac -vcodec libx264 "$targetfile"
+	fi
 done
 
 IFS=$IFSbackup
