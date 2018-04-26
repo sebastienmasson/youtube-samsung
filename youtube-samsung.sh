@@ -1,9 +1,5 @@
 #!/bin/sh
 
-# SETTINGS
-tmpdir=".tmp"
-
-
 ###############################################################################
 # FUNCTIONS
 ###############################################################################
@@ -28,15 +24,17 @@ usage()
 	echo "                Download single video.  <argument> is the video ID"
 	echo "        -vu, --vurl"
 	echo "                Download single video.  <argument> is the video URL"
+	echo "        -d, --dir, --directory"
+	echo "                Download file in directory given in <argument>.  If the argument is missing, or if the script is used without this option, files are saved in the current directory"
 	echo "EXAMPLES"
 	echo "        Download playlist from list URL"
-	echo "                ./youtube-samsung -lu https://www.youtube.com/watch?list=PLHJH2BlYG-EEBtw2y1njWpDukJSTs8Qqx"
+	echo "                ./youtube-samsung.sh -lu https://www.youtube.com/watch?list=PLHJH2BlYG-EEBtw2y1njWpDukJSTs8Qqx"
 	echo "        Download playlist from list ID"
-	echo "                ./youtube-samsung -l PLHJH2BlYG-EEBtw2y1njWpDukJSTs8Qqx"
+	echo "                ./youtube-samsung.sh -l PLHJH2BlYG-EEBtw2y1njWpDukJSTs8Qqx"
 	echo "        Download single video from video URL"
-	echo "                ./youtube-samsung -vu https://www.youtube.com/watch?v=zSQbUV-u5Xo"
+	echo "                ./youtube-samsung.sh -vu https://www.youtube.com/watch?v=zSQbUV-u5Xo"
 	echo "        Download single video from video ID"
-	echo "                ./youtube-samsung -v zSQbUV-u5Xo"
+	echo "                ./youtube-samsung.sh -v zSQbUV-u5Xo"
 }
 
 ###############################################################################
@@ -45,6 +43,7 @@ usage()
 listid=""
 videoid=""
 url=""
+targetdir=""	# Default target directory is the current directory
 
 #
 # CHECK SCRIPT'S ARGUMENTS
@@ -89,6 +88,12 @@ while [ "$1" != "" ]; do
 			fi
 			shift 2
 			;;
+		-d|--dir|--directory)	# Target directory
+			targetdir="$2"
+			if [ "$targetdir" = "" ]; then
+				echo "Warning: Option -d, --dir, --directory used without argument" ; echo
+			fi
+			;;
 		*)
 			usage
 			exit 1
@@ -122,41 +127,37 @@ if [ "$i" -gt 1 ]; then
 	exit 1
 fi
 
-# Check temporary directory
-if [ -d "$tmpdir" ]; then
-	echo "Error: Temporary directory already exists"
-	exit 1
-fi
-
 #
 # START DOWNLOAD
 #
 echo "STARTING DOWNLOAD ..."
 # Make temporary directory
-mkdir "$tmpdir"
-echo "... temporary directory has been built"
+if [ "$targetdir" != "" ]; then
+	mkdir "$targetdir"
+fi
+echo "... target directory has been built"
 
 echo " ... downloading.  Please wait!"
 # Download video from URL
 if [ "$vurl" != "" ]; then
-	youtube-dl -f bestvideo+bestaudio -o "$tmpdir/"'%(title)s.%(ext)s' "$vurl"
+	youtube-dl -f bestvideo+bestaudio -o "$targetdir/"'%(title)s.%(ext)s' "$vurl"
 fi
 
 # Download video from ID
 if [ "$videoid" != "" ]; then
 	vurl="https://www.youtube.com/watch?v=${videoid}"
-	youtube-dl -f bestvideo+bestaudio -o "$tmpdir/"'%(title)s.%(ext)s' "$vurl"
+	youtube-dl -f bestvideo+bestaudio -o "$targetdir/"'%(title)s.%(ext)s' "$vurl"
 fi
 
 # Download list from URL
 if [ "$lurl" != "" ]; then
-	youtube-dl -f bestvideo+bestaudio -o "$tmpdir/"'%(title)s.%(ext)s' "$lurl"
+	youtube-dl -f bestvideo+bestaudio -o "$targetdir/"'%(title)s.%(ext)s' "$lurl"
 fi
 
 # Download list from ID
 if [ "$listid" != "" ]; then
 	lurl="https://www.youtube.com/watch?list=${listid}"
-	youtube-dl -f bestvideo+bestaudio -o "$tmpdir/"'%(title)s.%(ext)s' "$lurl"
+	youtube-dl -f bestvideo+bestaudio -o "$targetdir/"'%(title)s.%(ext)s' "$lurl"
 fi
 
 echo
@@ -169,23 +170,15 @@ echo "STARTING CONVERSION ..."
 IFSbackup=$IFS
 IFS=$'\n'
 
-ls -A ./"$tmpdir"/ | while read file
+for file in "$targetdir"/*
 do
 	targetfile="${file}.avi"
 	echo "... processing \"$file\" to \"$targetfile\".  Please wait!"
-	ffmpeg -i "$tmpdir/$file" -acodec aac -vcodec libx264 "$targetfile"
+	ffmpeg -i "$file" -acodec aac -vcodec libx264 "$targetfile"
 done
 
 IFS=$IFSbackup
 echo
-
-#
-# CLEAN UP
-#
-
-# Delete temporary directory
-rm -fr "$tmpdir"
-echo "Temporary directory has been cleared"
 
 echo
 
