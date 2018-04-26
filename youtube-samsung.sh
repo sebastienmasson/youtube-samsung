@@ -26,6 +26,8 @@ usage()
 	echo "                Download single video.  <argument> is the video URL"
 	echo "        -d, --dir, --directory"
 	echo "                Download file in directory given in <argument>.  If the argument is missing, or if the script is used without this option, files are saved in the current directory"
+	echo "        -y, --yes"
+	echo "                Overwrite existing files"
 	echo "EXAMPLES"
 	echo "        Download playlist from list URL"
 	echo "                ./youtube-samsung.sh -lu https://www.youtube.com/watch?list=PLHJH2BlYG-EEBtw2y1njWpDukJSTs8Qqx"
@@ -44,6 +46,7 @@ listid=""
 videoid=""
 url=""
 targetdir=""	# Default target directory is the current directory
+overwrite=false
 
 #
 # CHECK SCRIPT'S ARGUMENTS
@@ -95,6 +98,10 @@ while [ "$1" != "" ]; do
 				exit 1
 			fi
 			shift 2
+			;;
+		-y|--yes)	# Overwrite files without notice
+			overwrite=true
+			shift
 			;;
 		*)
 			usage
@@ -185,7 +192,15 @@ do
        	if [ "$filetype" = "video" ]; then
 		targetfile="${file}.avi"
 		echo "... processing \"$file\" to \"$targetfile\".  Please wait!"
-		ffmpeg -i "$file" -acodec aac -vcodec libx264 "$targetfile"
+		echo "---------------------"
+		echo "Overwrite = $overwrite"
+		echo "---------------------"
+		if [ "$overwrite" = true ]; then
+			ffmpeg -y -i "$file" -acodec aac -vcodec libx264 "$targetfile"
+		else
+			ffmpeg -i "$file" -acodec aac -vcodec libx264 "$targetfile"
+		fi
+		rm "$file"
 	fi
 done
 
