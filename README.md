@@ -6,7 +6,7 @@
 \# apt install -y ffmpeg
 
 ## Description
-I have observed files downloaded from youtube do not have the proper audio codec to be watched on samsung and lg televisions (this is certainly also true with other brands).
+I observed files downloaded from youtube do not have the proper audio codec to be watched on samsung and lg televisions (this is certainly also true with other brands).
 
 This script calls youtube-dl to download the video or the playlist given in argument.  Then calls ffmpeg to produce a .avi file using: (1) AAC audio codec; (2) H.264 video codec.
 
